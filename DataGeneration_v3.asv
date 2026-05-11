@@ -1,0 +1,83 @@
+% generate dataset
+%   x_i, r_i
+%       r_i = b_i - A_i x_{i-1}
+addpath("HelperFunctions/");
+out_name = 'Data_Cameraman/data.mat';
+N                           = 64;
+TargetImg = imresize(im2double(imread('cameraman.tif')), [N, N]);
+% TargetImg = phantom(N);
+
+run("LoadSettings.m");
+total_recon_curr = [];
+total_recon_next = [];
+total_lambda = [];
+
+lambdas = .05:.05:2;
+
+% random initialization
+all_lambda_check= {};
+for ctr = 1:100
+    ProblemSetup.init = rand(size(A,2),1);
+    [all_recon_curr,all_recon_next, all_lambda] = Reconstruction_v3(AlgorithmSettings,ProblemSetup, lambdas, 1);
+
+    final_it_count = size(all_recon_next,2);
+disp(final_it_count)
+    all_recon_curr = reshape(all_recon_curr,N,N,final_it_count);
+    all_recon_next = reshape(all_recon_next,N,N,final_it_count);
+    %{
+residual_freq_power = zeros(size(all_residual));
+for ii = 1:size(all_residual,2)
+    res = reshape(all_residual(:,ii), [N,N]);
+    res_ft_power = fftshift(abs(fft2(res)).^2);
+    residual_freq_power(:,ii) = res_ft_power(:);
+end
+
+    %}
+    total_recon_curr = cat(3, total_recon_curr, all_recon_curr);
+    total_recon_next = cat(3, total_recon_next, all_recon_next);
+    total_lambda = [ total_lambda , all_lambda];
+all_lambda_check{ctr} = all_lambda;
+end
+% zero initialization
+ProblemSetup.init = zeros(size(A,2),1);
+for ctr = 1:5
+    [all_recon_curr,all_recon_next, all_lambda] = Reconstruction_v3(AlgorithmSettings,ProblemSetup, lambdas, 1);
+    
+    final_it_count = size(all_recon_next,2);
+    all_recon_curr = reshape(all_recon_curr,N,N,final_it_count);
+    all_recon_next = reshape(all_recon_next,N,N,final_it_count);
+    total_recon_curr = cat(3, total_recon_curr, all_recon_curr);
+    total_recon_next = cat(3, total_recon_next, all_recon_next);
+    total_lambda = [ total_lambda , all_lambda];
+    
+end
+
+% one initialization
+ProblemSetup.init = ones(size(A,2),1);
+for ctr = 1:5
+    
+    [all_recon_curr,all_recon_next, all_lambda] = Reconstruction_v3(AlgorithmSettings,ProblemSetup, lambdas, 1);
+    final_it_count = size(all_recon_next,2);
+    all_recon_curr = reshape(all_recon_curr,N,N,final_it_count);
+    all_recon_next = reshape(all_recon_next,N,N,final_it_count);
+    total_recon_curr = cat(3, total_recon_curr, all_recon_curr);
+    total_recon_next = cat(3, total_recon_next, all_recon_next);
+    total_lambda = [ total_lambda , all_lambda];
+end
+
+disp('verifying equal amounts of each')
+disp(size(total_recon_curr))
+disp(size(total_recon_next))
+disp(size(total_lambda))
+return;
+img = reshape(img, [N,N]);
+
+save(out_name, 'total_recon_curr', 'total_recon_next','total_lambda','img','N','-v7.3');
+
+
+figure(4); tiledlayout(4,5);
+for ii = 1:20
+    nexttile(ii);
+    d = fftshift(abs(fft2(reshape(all_recon_curr(:,:,ii+1),N,N))).^2) - ...
+        fftshift(abs(fft2(reshape(all_recon_curr(:,:,ii+1),N,N))).^2);
+

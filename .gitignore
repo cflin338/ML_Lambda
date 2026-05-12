@@ -1,0 +1,3 @@
+TrainedModels/*.pt
+__pycache__/
+Data*/

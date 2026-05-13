@@ -1,3 +1,4 @@
+% initial testing to see see how model performs on reconstruction
 % file for all general projection reconstruction methods
 % inputs are: A, b, method, iterations (N)
 % outputs are N arrays of the solution size, one for each iteration step
@@ -10,19 +11,40 @@ TargetImg = phantom(N);
 run("LoadSettings.m");
 
 ProblemSetup.Iterations = 500;
-    ProblemSetup.init = zeros(N*N,1);
+
+    % 
     % ProblemSetup.init = ones(N*N,1);
 errors = [];
 counts = [];
-for kk = 1:100
-        ProblemSetup.init = rand(N*N,1);
+for kk = 1:10
+    ProblemSetup.init = rand(N*N,1);
 
     [all_lambda_ml, recon_ml, recon_const, recon_rand, count] = Reconstruction_Testing_(AlgorithmSettings,ProblemSetup, 1);
 
     errors = [errors; [norm(recon_ml-img),norm(recon_const-img),norm(recon_rand-img)]];
     counts = [counts; [count]];
 end
-figure(4); plot(all_lambda_ml);title('Model Predicted Lambda'); xlabel('Iteration'); ylabel('Lambda')
+
+for kk = 1:5
+    ProblemSetup.init = ones(N*N,1);
+
+    [all_lambda_ml, recon_ml, recon_const, recon_rand, count] = Reconstruction_Testing_(AlgorithmSettings,ProblemSetup, 1);
+
+    errors = [errors; [norm(recon_ml-img),norm(recon_const-img),norm(recon_rand-img)]];
+    counts = [counts; [count]];
+end
+
+for kk = 1:5
+    ProblemSetup.init = zeros(N*N,1);
+
+    [all_lambda_ml, recon_ml, recon_const, recon_rand, count] = Reconstruction_Testing_(AlgorithmSettings,ProblemSetup, 1);
+
+    errors = [errors; [norm(recon_ml-img),norm(recon_const-img),norm(recon_rand-img)]];
+    counts = [counts; [count]];
+end
+
+% looking at one sample
+figure(4); plot(all_lambda_ml);title('Model Predicted Lambda-One Sample'); xlabel('Iteration'); ylabel('Lambda')
 mean_errors = mean(errors, 1);
 mean_counts = mean(counts, 1);
 
@@ -33,14 +55,14 @@ std_counts = std(counts, 0, 1);
 function [all_lambda_ml, recon_ml, recon_const, recon_rand, counts] = Reconstruction_Testing_(AlgorithmSettings,ProblemSetup, fignum)
 
     model = 'shepp2'; %camera2, shepp2
-    AlgorithmSettings.visualize=true;
+    AlgorithmSettings.visualize=false;
     [recon_ml, all_lambda_ml, recon_count_ml]   = SART_ML(AlgorithmSettings, ProblemSetup, model, fignum);
     fprintf('ML used %i Iterations\n', recon_count_ml);
     AlgorithmSettings.lambda = 1 + (1.5 - 1) * rand;
     [recon_const, recon_count_const]            = SART_Constant(AlgorithmSettings, ProblemSetup, fignum+1);
-    fprintf('Constant (%0.5f) used %i iterations', AlgorithmSettings.lambda, recon_count_const)
+    fprintf('Constant (%0.5f) used %i iterations\n', AlgorithmSettings.lambda, recon_count_const)
     [recon_rand, recon_count_rand]            = SART_Random(AlgorithmSettings, ProblemSetup, fignum+2);
-    fprintf('Random used %i iterations', recon_count_rand)
+    fprintf('Random used %i iterations\n', recon_count_rand)
 
     counts = [recon_count_ml, recon_count_const, recon_count_rand];
 end
@@ -141,7 +163,7 @@ end
         change = norm(prev_recon - recon)/sum(prev_recon);
 % change = norm(recon-img);
         if change < exit_criteria
-            fprintf('exit criteria met in %i iterations\n', iter);
+            % fprintf('exit criteria met in %i iterations\n', iter);
             all_lambda = all_lambda(1:iter);
             recon_count = iter;
             return;
@@ -221,7 +243,7 @@ function [recon, recon_count] = SART_Constant(pm_SART, ProblemSetup, fignum)
 % change = norm(recon-img);
 
         if change < exit_criteria
-            fprintf('exit criteria met in %i iterations\n', iter);
+            % fprintf('exit criteria met in %i iterations\n', iter);
             recon_count = iter;
             return;
         end
@@ -300,7 +322,7 @@ function [recon, recon_count] = SART_Random(pm_SART, ProblemSetup, fignum)
 % change = norm(recon-img);
 
         if change < exit_criteria
-            fprintf('exit criteria met in %i iterations\n', iter);
+            % fprintf('exit criteria met in %i iterations\n', iter);
             recon_count = iter;
             return;
         end

@@ -14,7 +14,6 @@
 
 addpath("HelperFunctions/");
 all_modes = {'forb','camera', 'shepp'};
-all_modes = {'camera'};
 
 reduced = true;
 N       = 64;
@@ -129,10 +128,10 @@ for m_idx = 1:length(all_modes)
     
     %%
     % visualize average lambda for each iteration
-    it_count = zeros(75,1);
-    l_total  = zeros(75,1);
-    l_sqtotal = zeros(75,1);   % NEW: for second moment
-    
+    it_count = zeros(max_iters,1);
+    l_total  = zeros(max_iters,1);
+    l_sqtotal = zeros(max_iters,1);   % NEW: for second moment
+
     for ii = 1:length(all_lambda_check)
         tmp = all_lambda_check{ii};
     
@@ -144,10 +143,10 @@ for m_idx = 1:length(all_modes)
     end
     
     % compute mean + std
-    l_mean = zeros(75,1);
-    l_std  = zeros(75,1);
+    l_mean = zeros(max_iters,1);
+    l_std  = zeros(max_iters,1);
     
-    for jj = 1:75
+    for jj = 1:max_iters
         l_mean(jj) = l_total(jj) / it_count(jj);
     
         var_jj = (l_sqtotal(jj) / it_count(jj)) - l_mean(jj)^2;
@@ -156,23 +155,33 @@ for m_idx = 1:length(all_modes)
         l_std(jj) = sqrt(var_jj);
     end
     
-    x = 1:75;
+    x = 1:max_iters;
     
-    figure; hold on;
+    figure(m_idx + 10);
     
+    yyaxis left
+    hold on;
     plot(x, l_mean, 'b', 'LineWidth', 2);
     plot(x, l_mean + 2*l_std, 'r--', 'LineWidth', 1.5);
     plot(x, l_mean - 2*l_std, 'r--', 'LineWidth', 1.5);
     
-    % optional: shaded region (cleaner visually)
     fill([x fliplr(x)], ...
          [l_mean+2*l_std; flipud(l_mean-2*l_std)], ...
          'r', 'FaceAlpha', 0.15, 'EdgeColor', 'none');
     
-    legend('Mean', '±2 Std Dev');
+    ylabel('Lambda Value');
+    
+    yyaxis right
+    bar(x, it_count, 0.4, 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+    ylabel('Sample Count');
+    
     xlabel('Iteration');
-    ylabel('Value');
-    title('Mean and Variability over Iterations');
-    hold off;
-
+    title(sprintf('Mean, Variability, and Sample Count: %s', training_mode));
+    
+    legend('Mean', '±2 Std Dev', 'Location', 'best');
+    
+    [minv, mini] = min(it_count);
+    if minv==0
+        xlim([0,mini])
+    end
 end

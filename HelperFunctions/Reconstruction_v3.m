@@ -54,7 +54,6 @@ function [all_recon_curr, all_recon_next, all_optimal_lambda] = SART(pm_SART, Pr
     recon = ProblemSetup.init;
     for iter = 1:iterations
         prev_recon = recon;
-        imshow(reshape(prev_recon,N,N),'InitialMagnification','fit');
         best_recon = prev_recon;
         best_lambda = 5;
         best_lambda_error = inf;
